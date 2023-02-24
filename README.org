@@ -1,0 +1,133 @@
+#+title: Dhall RDF
+
+
+
+A serialization language for RDF using [[https://dhall-lang.org/][Dhall]].
+
+* Example
+#+begin_src dhall
+ let map = https://prelude.dhall-lang.org/v11.1.0/List/map in
+ let Map = https://prelude.dhall-lang.org/v15.0.0/Map/Type in
+ let Pair = { left: Text, right: Text } in
+ let TextOrMap  = < Text : Text | Map : Map Text Text > in
+ let Triple = Map Text TextOrMap in
+ let triple = \( subject : Text ) -> \( verb : Text) -> \( object : Text) ->
+     [
+        {
+          mapKey = "@id",
+          mapValue = TextOrMap.Text  subject
+        },
+        {
+           mapKey = verb,  mapValue =
+            TextOrMap.Map [
+                {
+                    mapKey = "@id",
+                    mapValue = object
+                }
+            ]
+        }
+    ] in
+let double = \( left : Text ) -> \( right: Text ) -> { left = left, right = right } in
+let withSubject = \( subject : Text) -> \( pairs: List Pair) -> map Pair Triple (\( pred : Pair ) -> triple subject pred.left pred.right) pairs in
+let withVerb = \( verb: Text ) -> \( list : List Text ) -> map Text Pair ( \( object : Text ) -> { left = verb, right = object } ) list in
+let prefix = \(pre : Text) -> \(suf : Text) -> pre ++ suf in
+let anonymous = \(pairs: List Pair ) -> "Anonymous" in
+let uni = prefix  "http://uni-tuebingen.de/semanticWebClass/university#" in
+let owl = prefix "http://www.w3.org/2002/07/owl#" in
+let rdf = prefix "http://www.w3.org/1999/02/22-rdf-syntax-ns#" in
+let rdfs = prefix "http://www.w3.org/1999/02/22-rdf-syntax-ns#" in
+[
+  triple (uni  "Human") (rdf  "type") (owl  "Class"),
+  triple (uni  "UniversityPerson") (rdf  "type") (owl  "Class")
+
+] #
+   withSubject (uni  "hasFaculty") [
+         double (rdf  "type") (owl  "ObjectProperty"),
+         double (rdfs  "domain") (uni  "University"),
+         double (rdfs  "range") (uni  "Faculty"),
+         double (rdfs  "domain") (uni  "University"),
+   ] #
+
+   withSubject (uni  "TeachingAssistant") [
+         double (rdf  "type") (owl  "Class"),
+         double (owl  "equivalentClass") (anonymous
+             (withVerb (owl "intersectionOf") [
+                             uni "Teacher",
+                            uni "Student" ]
+)             ),
+   ]
+#+end_src
+
+
+This will output
+
+#+begin_src json
+
+[
+  {
+    "@id": "http://uni-tuebingen.de/semanticWebClass/university#Human",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+      "@id": "http://www.w3.org/2002/07/owl#Class"
+    }
+  },
+  {
+    "@id": "http://uni-tuebingen.de/semanticWebClass/university#UniversityPerson",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+      "@id": "http://www.w3.org/2002/07/owl#Class"
+    }
+  },
+  {
+    "@id": "http://uni-tuebingen.de/semanticWebClass/university#hasFaculty",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+      "@id": "http://www.w3.org/2002/07/owl#ObjectProperty"
+    }
+  },
+  {
+    "@id": "http://uni-tuebingen.de/semanticWebClass/university#hasFaculty",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#domain": {
+      "@id": "http://uni-tuebingen.de/semanticWebClass/university#University"
+    }
+  },
+  {
+    "@id": "http://uni-tuebingen.de/semanticWebClass/university#hasFaculty",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#range": {
+      "@id": "http://uni-tuebingen.de/semanticWebClass/university#Faculty"
+    }
+  },
+  {
+    "@id": "http://uni-tuebingen.de/semanticWebClass/university#hasFaculty",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#domain": {
+      "@id": "http://uni-tuebingen.de/semanticWebClass/university#University"
+    }
+  },
+  {
+    "@id": "http://uni-tuebingen.de/semanticWebClass/university#TeachingAssistant",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+      "@id": "http://www.w3.org/2002/07/owl#Class"
+    }
+  },
+  {
+    "@id": "http://uni-tuebingen.de/semanticWebClass/university#TeachingAssistant",
+    "http://www.w3.org/2002/07/owl#equivalentClass": {
+      "@id": "Anonymous"
+    }
+  }
+]
+#+end_src
+
+
+#+begin_src ttl
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+<http://uni-tuebingen.de/semanticWebClass/university#Human> a owl:Class .
+
+<http://uni-tuebingen.de/semanticWebClass/university#TeachingAssistant> a owl:Class ;
+    owl:equivalentClass <file:///Users/johnwang/org/code/Anonymous> .
+
+<http://uni-tuebingen.de/semanticWebClass/university#UniversityPerson> a owl:Class .
+
+<http://uni-tuebingen.de/semanticWebClass/university#hasFaculty> a owl:ObjectProperty ;
+    rdf:domain <http://uni-tuebingen.de/semanticWebClass/university#University> ;
+    rdf:range <http://uni-tuebingen.de/semanticWebClass/university#Faculty> .
+#+end_src
