@@ -4,6 +4,41 @@
 
 A serialization language for RDF using [[https://dhall-lang.org/][Dhall]].
 
+
+* Why
+
+
+RDF has many serialization formats, such as json-ld and turtle, why add another one?
+
+** Dhall is a programming language
+
+
+
+Sometimes, you may have repetitive data. Since other serialization formats are not programming languages, your options are either to manually enter it, or use some adhoc tool to generate the data.
+
+Although some serialization languages such as turtle have constructs which make the code more concise, this is restricted to what has been implemented in turtle. For instance, you cannot make an arbitrary variable.
+
+With dhall, the configuration language itself allows you to generate the data, without relying on an external tool.
+
+** Dhall is typed
+
+Using OWL, classes and instances can be specified. However, the language itself does not check whether these are valid definitions. The class name could have a typo, and turtle will not complain.
+
+Dhall is typed, and type checked. This can help prevent errors by asserting that classes will have certain guarantees.
+
+Additionally, Dhall's type system is based on the calculus of contsructions, which allows for dependent types.
+
+
+
+
+** Semantic hash
+
+Dhall has a feature knows as semantic hash. If the framework is correctly used, it means that there is a quick way to compare if two ontologies are equal or not.
+
+** Export to JSON
+
+DHall easily exports to JSON, making it easy to use with applications that already support JSON-LD. If the user finds it too difficult to use DHall, they can always switch to JSON-LD.
+
 * Example
 #+begin_src dhall
  let map = https://prelude.dhall-lang.org/v11.1.0/List/map in
